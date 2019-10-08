@@ -62,9 +62,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mMap.clear();
 
-
-        mMap.addMarker(new MarkerOptions().position(userLocation).title(title));
-
+        if(title!="Your location") {
+            mMap.addMarker(new MarkerOptions().position(userLocation).title(title));
+        }
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 10));
     }
 
@@ -96,7 +96,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Intent intent = getIntent();
 
-        if(intent.getIntExtra("placeNumber", 0)== 0){
+        if (intent.getIntExtra("placeNumber", 0) == 0) {
             // zoom in on the users's location
 
             locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -105,7 +105,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 @Override
                 public void onLocationChanged(Location location) {
 
-                    centerMapLocation(location, "Your Location");
+                    centerMapLocation(location, "Your location");
 
                 }
 
@@ -124,8 +124,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 }
             };
-
-            if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED){
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
 
@@ -133,11 +132,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 centerMapLocation(lastKnown, "Your location");
 
-            }else{
 
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1);
+            } else {
+
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
 
             }
+        } else {
+
             Location placeLocation = new Location(LocationManager.GPS_PROVIDER);
             placeLocation.setLatitude(MainActivity.locations.get(intent.getIntExtra("placeNumber", 0)).latitude);
             placeLocation.setLongitude(MainActivity.locations.get(intent.getIntExtra("placeNumber", 0)).longitude);
@@ -145,12 +147,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             centerMapLocation(placeLocation, MainActivity.places.get(intent.getIntExtra("placeNumber", 0)));
 
 
-
         }
+    }
         ///Toast.makeText(this, intent.getStringExtra("placeNumber"), Toast.LENGTH_SHORT).show();
 
         // Add a marker in Sydney and move the camera
-    }
 
     @Override
     public void onMapLongClick(LatLng latLng) {
@@ -187,7 +188,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         }
 
-        mMap.addMarker(new MarkerOptions().position(latLng).title("your new place"));
+        mMap.addMarker(new MarkerOptions().position(latLng).title(address));
 
         MainActivity.places.add(address);
         MainActivity.locations.add(latLng);

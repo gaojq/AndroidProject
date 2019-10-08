@@ -16,8 +16,8 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    static ArrayList<String> places = new ArrayList<>();
-    static ArrayList<LatLng> locations = new ArrayList<>();
+    static ArrayList<String> places;
+    static ArrayList<LatLng> locations;
     static ArrayAdapter arrayAdapter;
 
     @Override
@@ -28,7 +28,9 @@ public class MainActivity extends AppCompatActivity {
         ListView listView = (ListView) findViewById(R.id.listView);
 
 
+        places = new ArrayList<>();
         places.add("Add a new place");
+        locations = new ArrayList<>();
         locations.add(new LatLng(0,0));
 
         arrayAdapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, places);
