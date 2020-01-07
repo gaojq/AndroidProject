@@ -1,4 +1,4 @@
-package com.example.memoplace;
+package com.example.parproject;
 
 import org.junit.Test;
 

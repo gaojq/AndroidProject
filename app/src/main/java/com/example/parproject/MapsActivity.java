@@ -1,4 +1,4 @@
-package com.example.memoplace;
+package com.example.parproject;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -14,11 +14,10 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -35,36 +34,29 @@ import java.util.Locale;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLongClickListener {
 
     private GoogleMap mMap;
+
     LocationManager locationManager;
+
     LocationListener locationListener;
-    List<Address> listAddress;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if(grantResults.length>0 && grantResults[0]== PackageManager.PERMISSION_GRANTED){
-
-            if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED){
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-
-                Location lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
-                centerMapLocation(lastKnown, "Your location");
-
+                Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                centerMapOnLocation(lastKnownLocation, "Your location");
             }
-
         }
     }
 
-    public void centerMapLocation(Location location, String title){
+    public void centerMapOnLocation(Location location, String title) {
         LatLng userLocation = new LatLng(location.getLatitude(), location.getLongitude());
-
         mMap.clear();
-
-
-        mMap.addMarker(new MarkerOptions().position(userLocation).title(title));
-
+        if (title != "Your location") {
+            mMap.addMarker(new MarkerOptions().position(userLocation).title(title));
+        }
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation, 10));
     }
 
@@ -91,109 +83,69 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
         mMap.setOnMapLongClickListener(this);
-
         Intent intent = getIntent();
-
-        if(intent.getIntExtra("placeNumber", 0)== 0){
-            // zoom in on the users's location
-
+        if (intent.getIntExtra("placeNumber", 0) == 0) {
+            // zoom in on user's location
             locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-
             locationListener = new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
-
-                    centerMapLocation(location, "Your Location");
-
+                    centerMapOnLocation(location, "Your location");
                 }
-
                 @Override
                 public void onStatusChanged(String s, int i, Bundle bundle) {
-
                 }
-
                 @Override
                 public void onProviderEnabled(String s) {
-
                 }
-
                 @Override
                 public void onProviderDisabled(String s) {
-
                 }
             };
 
-            if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)== PackageManager.PERMISSION_GRANTED){
-
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-
-                Location lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-
-                centerMapLocation(lastKnown, "Your location");
-
-            }else{
-
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},1);
-
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+                    Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    centerMapOnLocation(lastKnownLocation, "Your location");
+                } else {
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+                }
             }
             Location placeLocation = new Location(LocationManager.GPS_PROVIDER);
-            placeLocation.setLatitude(MainActivity.locations.get(intent.getIntExtra("placeNumber", 0)).latitude);
-            placeLocation.setLongitude(MainActivity.locations.get(intent.getIntExtra("placeNumber", 0)).longitude);
-
-            centerMapLocation(placeLocation, MainActivity.places.get(intent.getIntExtra("placeNumber", 0)));
-
-
-
+            placeLocation.setLatitude(Memo.locations.get(intent.getIntExtra("placeNumber", 0)).latitude);
+            placeLocation.setLongitude(Memo.locations.get(intent.getIntExtra("placeNumber", 0)).longitude);
+            centerMapOnLocation(placeLocation, Memo.places.get(intent.getIntExtra("placeNumber", 0)));
         }
-        ///Toast.makeText(this, intent.getStringExtra("placeNumber"), Toast.LENGTH_SHORT).show();
-
-        // Add a marker in Sydney and move the camera
-    }
 
     @Override
     public void onMapLongClick(LatLng latLng) {
-
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-
+        Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.getDefault());
         String address = "";
-
         try {
-            listAddress = geocoder.getFromLocation(latLng.latitude, latLng.longitude,1);
-            Log.d("Address","..............."+listAddress.get(0).getThoroughfare());
-            if(listAddress!= null && listAddress.size()>0){
-
-                if(listAddress.get(0).getThoroughfare()!=null){
-                    if(listAddress.get(0).getSubThoroughfare()!=null){
-
-                        address+= listAddress.get(0).getSubThoroughfare()+" ";
-                        Log.i("Address", ".........."+address);
+            List<Address> listAddresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+            if (listAddresses != null && listAddresses.size() > 0) {
+                if (listAddresses.get(0).getThoroughfare() != null) {
+                    if (listAddresses.get(0).getSubThoroughfare() != null) {
+                        address += listAddresses.get(0).getSubThoroughfare() + " ";
                     }
-                    address+= listAddress.get(0).getThoroughfare();
+                    address += listAddresses.get(0).getThoroughfare();
                 }
-
             }
-
-        }catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
         }
-
-        if(address == ""){
+        if (address == "") {
 
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm yyyy-MM-dd");
 
             address = sdf.format(new Date());
 
         }
-
-        mMap.addMarker(new MarkerOptions().position(latLng).title("your new place"));
-
-        MainActivity.places.add(address);
-        MainActivity.locations.add(latLng);
-
-        MainActivity.arrayAdapter.notifyDataSetChanged();
-
-        Toast.makeText(this, "location Saved", Toast.LENGTH_SHORT).show();
+        mMap.addMarker(new MarkerOptions().position(latLng).title(address));
+        Memo.places.add(address);
+        Memo.locations.add(latLng);
+        Memo.arrayAdapter.notifyDataSetChanged();
+        Toast.makeText(this, "Location Saved", Toast.LENGTH_SHORT).show();
     }
 }
